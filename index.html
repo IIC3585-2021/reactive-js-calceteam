@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Reactive JS</title>
+    <script src="https://unpkg.com/rxjs/bundles/rxjs.umd.min.js" ></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <img id="pacman" alt="pacman" src="./pacman.png">
+    <script>
+      // Init vars
+      const { fromEvent } = rxjs;
+      var { map } = rxjs.operators;
+      const pacman = document.getElementById("pacman");
+      
+      // Event Observer
+      const keyDown = fromEvent(document, 'keydown')
+        .pipe(map(event => event.key));
+      
+      // Subscriber
+      keyDown.subscribe(val => {
+        const posV = parseInt(pacman.style.top || 0);
+        const posH = parseInt(pacman.style.left || 0);
+        switch (val) {
+          case 'ArrowUp':
+            pacman.style.top = (posV - 10) + 'px';
+            pacman.style.transform = 'rotate(270deg)';
+            break;
+          case 'ArrowDown':
+            pacman.style.top = (posV + 10) + 'px';
+            pacman.style.transform = 'rotate(90deg)';
+            break;
+          case 'ArrowLeft':
+            pacman.style.left = (posH - 10) + 'px';
+            pacman.style.transform = 'rotate(180deg)';
+            break;
+          case 'ArrowRight':
+            pacman.style.left = (posH + 10) + 'px';
+            pacman.style.transform = 'rotate(0deg)';
+            break;
+          default:
+            break;
+        }
+      });
+    </script>
+  </body>
+</html>
