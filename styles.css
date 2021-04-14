@@ -2,11 +2,57 @@ body {
   background-color: #000000;
 }
 
+.tablero {
+	border: 3px solid #FFFFFF;
+	height: 500px;
+	width: 500px;
+}
+
 #pacman {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 10px;
+  left: 10px;
   height: 20px;
   width: 20px;
   transform: rotate(0deg);
 }
+
+#phantom1 {
+  position: fixed;
+  height: 20px;
+  width: 20px;
+  transform: rotate(0deg);
+  filter: hue-rotate(10deg);
+}
+
+
+#phantom2 {
+  position: fixed;
+  height: 20px;
+  width: 20px;
+  transform: rotate(0deg);
+  filter: hue-rotate(250deg);
+}
+
+
+#phantom3 {
+  position: fixed;
+  height: 20px;
+  width: 20px;
+  transform: rotate(0deg);
+  filter: hue-rotate(50deg);
+}
+
+#phantom4 {
+  position: fixed;
+  height: 20px;
+  width: 20px;
+  transform: rotate(0deg);
+  filter: hue-rotate(150deg);
+}
+
+#gameover {
+  height: 300px;
+  position: fixed;
+}
+

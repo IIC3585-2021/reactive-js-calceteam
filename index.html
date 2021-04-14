@@ -6,41 +6,159 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <div class="tablero"></div>
     <img id="pacman" alt="pacman" src="./pacman.png">
+    <img id="phantom1" alt="phantom1" style="top: 490px; left: 490px;" src="./phantom.png">
+    <img id="phantom2" alt="phantom2" style="top: 10px; left: 490px;"src="./phantom.png">
+    <img id="phantom3" alt="phantom3" style="top: 490px; left: 10px;"src="./phantom.png">
+    <img id="phantom4" alt="phantom4" style="top: 250px; left: 250px;"src="./phantom.png">
+    <img id="gameover" alt="gameover" style="top: 100px; left: 100px; display: none;"src="./gameover.png">
     <script>
       // Init vars
-      const { fromEvent } = rxjs;
+      const { Subject, Observable, fromEvent } = rxjs;
       var { map } = rxjs.operators;
+
       const pacman = document.getElementById("pacman");
-      
+      const phantom1 = document.getElementById("phantom1");
+      const phantom2 = document.getElementById("phantom2");
+      const phantom3 = document.getElementById("phantom3");
+      const phantom4 = document.getElementById("phantom4");
+      const gameover = document.getElementById("gameover");
+
+      const enemiesObservable = new Observable((observer) => {
+        setInterval(() => {
+          observer.next();
+        }, 100);
+      });
+      const collisionSubject = new Subject();
+      const getDistance = (a, b) => a
+              .map((x, i) => Math.abs( x - b[i] ) ** 2)
+              .reduce((sum, now) => sum + now) ** (1/2);
+
+      const getPositions = () => ({
+        xPacman: parseInt(pacman.style.left || 0),
+        yPacman: parseInt(pacman.style.top || 0),
+        xPhantom1: parseInt(phantom1.style.left || 0),
+        yPhantom1: parseInt(phantom1.style.top || 0),
+        xPhantom2: parseInt(phantom2.style.left || 0),
+        yPhantom2: parseInt(phantom2.style.top || 0),
+        xPhantom3: parseInt(phantom3.style.left || 0),
+        yPhantom3: parseInt(phantom3.style.top || 0),
+        xPhantom4: parseInt(phantom4.style.left || 0),
+        yPhantom4: parseInt(phantom4.style.top || 0),
+      });
+
+      enemiesObservable.subscribe(() => {
+        randomMovement();
+        checkCollisions();
+      });
+
+      collisionSubject.subscribe((data) => {
+        console.log("posicion: ", x, y);
+      });
+
+      const checkCollisions = () => {
+        const {
+          xPacman, 
+          yPacman, 
+          xPhantom1,
+          yPhantom1,
+          xPhantom2,
+          yPhantom2,
+          xPhantom3,
+          yPhantom3,
+          xPhantom4,
+          yPhantom4,
+        } = getPositions(); 
+        
+        const d1 = getDistance([xPacman, yPacman], [xPhantom1, yPhantom1]);
+        const d2 = getDistance([xPacman, yPacman], [xPhantom2, yPhantom2]);
+        const d3 = getDistance([xPacman, yPacman], [xPhantom3, yPhantom3]);
+        const d4 = getDistance([xPacman, yPacman], [xPhantom4, yPhantom4]);
+
+        if([d1, d2, d3, d4].some(x => x < 14)) {
+          pacman.style.display = 'none';
+          gameover.style.display = 'block';
+        }
+      }
+
       // Event Observer
       const keyDown = fromEvent(document, 'keydown')
         .pipe(map(event => event.key));
       
-      // Subscriber
-      keyDown.subscribe(val => {
-        const posV = parseInt(pacman.style.top || 0);
-        const posH = parseInt(pacman.style.left || 0);
-        switch (val) {
-          case 'ArrowUp':
-            pacman.style.top = (posV - 10) + 'px';
-            pacman.style.transform = 'rotate(270deg)';
+      const movePlayer = (player, direction) => {
+        const pV = parseInt(player.style.top || 0);
+        const pH = parseInt(player.style.left || 0);
+        
+        switch (direction) {
+          case 1:
+            player.style.top = ((pV - 10) > 10 ? (pV - 10) : 10) + 'px';
             break;
-          case 'ArrowDown':
-            pacman.style.top = (posV + 10) + 'px';
-            pacman.style.transform = 'rotate(90deg)';
+          case 2:
+            player.style.top = ((pV + 10) < 490 ? (pV + 10) : 490) + 'px';
             break;
-          case 'ArrowLeft':
-            pacman.style.left = (posH - 10) + 'px';
-            pacman.style.transform = 'rotate(180deg)';
+          case 3:
+            player.style.left = ((pH - 10) > 10 ? (pH - 10) : 10 )+ 'px';
+            player.style.transform = 'rotate(0deg)';
             break;
-          case 'ArrowRight':
-            pacman.style.left = (posH + 10) + 'px';
-            pacman.style.transform = 'rotate(0deg)';
+          case 4:
+            player.style.left = ((pH + 10) < 490 ? (pH + 10) : 490) + 'px';
+            player.style.transform = 'scaleX(-1)';
             break;
           default:
             break;
         }
+      }
+
+      const randomMovement = () => {
+        const direction2 = Math.floor(Math.random() * 4) + 1;
+        const direction3 = Math.floor(Math.random() * 4) + 1;
+        const direction4 = Math.floor(Math.random() * 4) + 1;
+        
+        movePlayer(phantom2, direction2);
+        movePlayer(phantom3, direction3);
+        movePlayer(phantom4, direction4);
+      }
+
+      // Subscriber
+      keyDown.subscribe(val => {
+        const pacmanposV = parseInt(pacman.style.top || 0);
+        const pacmanposH = parseInt(pacman.style.left || 0);
+        const phantomposV = parseInt(phantom1.style.top || 490);
+        const phantomposH = parseInt(phantom1.style.left || 490);
+        switch (val) {
+          case 'ArrowUp':
+            movePlayer(pacman, 1);
+            pacman.style.transform = 'rotate(270deg)';
+            break;
+          case 'ArrowDown':
+            movePlayer(pacman, 2);
+            pacman.style.transform = 'rotate(90deg)';
+            break;
+          case 'ArrowLeft':
+            movePlayer(pacman, 3);
+            pacman.style.transform = 'rotate(180deg)';
+            break;
+          case 'ArrowRight':
+            movePlayer(pacman, 4);
+            pacman.style.transform = 'rotate(0deg)';
+            break;
+          case 'w':
+            movePlayer(phantom1, 1);
+            break;
+          case 's':
+            movePlayer(phantom1, 2);
+            break;
+          case 'a':
+            movePlayer(phantom1, 3);
+            break;
+          case 'd':
+            movePlayer(phantom1, 4);
+            break;
+          default:
+            break;
+        }
+        checkCollisions();
       });
     </script>
   </body>
