@@ -30,7 +30,7 @@
           observer.next();
         }, 100);
       });
-      const collisionSubject = new Subject();
+      
       const getDistance = (a, b) => a
               .map((x, i) => Math.abs( x - b[i] ) ** 2)
               .reduce((sum, now) => sum + now) ** (1/2);
@@ -53,9 +53,14 @@
         checkCollisions();
       });
 
-      collisionSubject.subscribe((data) => {
-        console.log("posicion: ", x, y);
-      });
+      const makeMove = (pacman, phantom) => {
+        const xDiff = pacman[0] - phantom[0];
+        const yDiff = pacman[1] - phantom[1];
+        if(Math.abs(xDiff) > Math.abs(yDiff)) {
+          return xDiff > 0 ? 4 : 3;
+        }
+        return yDiff > 0 ? 2 : 1;
+      };
 
       const checkCollisions = () => {
         const {
@@ -111,9 +116,21 @@
       }
 
       const randomMovement = () => {
-        const direction2 = Math.floor(Math.random() * 4) + 1;
-        const direction3 = Math.floor(Math.random() * 4) + 1;
-        const direction4 = Math.floor(Math.random() * 4) + 1;
+        const {
+          xPacman, 
+          yPacman, 
+          xPhantom1,
+          yPhantom1,
+          xPhantom2,
+          yPhantom2,
+          xPhantom3,
+          yPhantom3,
+          xPhantom4,
+          yPhantom4,
+        } = getPositions(); 
+        const direction2 = makeMove([xPacman, yPacman],[xPhantom2, yPhantom2]);
+        const direction3 = makeMove([xPacman, yPacman],[xPhantom3, yPhantom3]);
+        const direction4 = makeMove([xPacman, yPacman],[xPhantom4, yPhantom4]);
         
         movePlayer(phantom2, direction2);
         movePlayer(phantom3, direction3);
