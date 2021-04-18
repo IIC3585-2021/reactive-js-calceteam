@@ -51,6 +51,18 @@ body {
   filter: hue-rotate(150deg);
 }
 
+#guinda1 {
+  position: fixed;
+  height: 30px;
+  width: 30px;
+}
+
+#guinda2 {
+  position: fixed;
+  height: 30px;
+  width: 30px;
+}
+
 #gameover {
   height: 300px;
   position: fixed;

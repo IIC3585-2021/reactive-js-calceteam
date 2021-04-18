@@ -9,31 +9,40 @@
     <div class="tablero"></div>
     <img id="pacman" alt="pacman" src="./pacman.png">
     <img id="phantom1" alt="phantom1" style="top: 490px; left: 490px;" src="./phantom.png">
-    <img id="phantom2" alt="phantom2" style="top: 10px; left: 490px;"src="./phantom.png">
-    <img id="phantom3" alt="phantom3" style="top: 490px; left: 10px;"src="./phantom.png">
-    <img id="phantom4" alt="phantom4" style="top: 250px; left: 250px;"src="./phantom.png">
+    <img id="phantom2" alt="phantom2" style="top: 10px; left: 490px;" src="./phantom.png">
+    <img id="phantom3" alt="phantom3" style="top: 490px; left: 10px;" src="./phantom.png">
+    <img id="phantom4" alt="phantom4" style="top: 250px; left: 250px;" src="./phantom.png">
+    <img id="guinda1" alt="guinda1" style="top: 150px; left: 350px;" src="./guinda.png">
+    <img id="guinda2" alt="guinda2" style="top: 350px; left: 150px;" src="./guinda.png">
     <img id="gameover" alt="gameover" style="top: 100px; left: 100px; display: none;"src="./gameover.png">
     <script>
       // Init vars
-      const { Subject, Observable, fromEvent } = rxjs;
-      var { map } = rxjs.operators;
-
       const pacman = document.getElementById("pacman");
       const phantom1 = document.getElementById("phantom1");
       const phantom2 = document.getElementById("phantom2");
       const phantom3 = document.getElementById("phantom3");
       const phantom4 = document.getElementById("phantom4");
+      const guinda1 = document.getElementById("phantom4");
+      const guinda2 = document.getElementById("phantom4");
       const gameover = document.getElementById("gameover");
 
+      const { Subject, Observable, fromEvent } = rxjs;
+      const { map } = rxjs.operators;
+
+      let movementInterval;
+      const setCssProp = (obj, { prop, val }) => {
+        obj.setProperty(prop, val);
+        return obj;
+      };
+
       const enemiesObservable = new Observable((observer) => {
-        setInterval(() => {
+        movementInterval = setInterval(() => {
           observer.next();
-        }, 100);
+        }, 250);
       });
-      
-      const getDistance = (a, b) => a
-              .map((x, i) => Math.abs( x - b[i] ) ** 2)
-              .reduce((sum, now) => sum + now) ** (1/2);
+
+      const getDistance = (a, b) =>
+        a.map((x, i) => Math.abs(x - b[i]) ** 2).reduce((sum, now) => sum + now) ** (1 / 2);
 
       const getPositions = () => ({
         xPacman: parseInt(pacman.style.left || 0),
@@ -46,26 +55,30 @@
         yPhantom3: parseInt(phantom3.style.top || 0),
         xPhantom4: parseInt(phantom4.style.left || 0),
         yPhantom4: parseInt(phantom4.style.top || 0),
+        xGuinda1: 150,
+        yGuinda1: 350,
+        xGuinda2: 350,
+        yGuinda2: 150,
       });
 
       enemiesObservable.subscribe(() => {
-        randomMovement();
+        seekPacman();
         checkCollisions();
       });
 
       const makeMove = (pacman, phantom) => {
         const xDiff = pacman[0] - phantom[0];
         const yDiff = pacman[1] - phantom[1];
-        if(Math.abs(xDiff) > Math.abs(yDiff)) {
-          return xDiff > 0 ? 4 : 3;
+        if (Math.abs(xDiff) > Math.abs(yDiff)) {
+          return xDiff > 0 ? "right" : "left";
         }
-        return yDiff > 0 ? 2 : 1;
+        return yDiff > 0 ? "down" : "up";
       };
 
       const checkCollisions = () => {
         const {
-          xPacman, 
-          yPacman, 
+          xPacman,
+          yPacman,
           xPhantom1,
           yPhantom1,
           xPhantom2,
@@ -74,51 +87,91 @@
           yPhantom3,
           xPhantom4,
           yPhantom4,
-        } = getPositions(); 
-        
+          xGuinda1,
+          yGuinda1,
+          xGuinda2,
+          yGuinda2,
+        } = getPositions();
+
         const d1 = getDistance([xPacman, yPacman], [xPhantom1, yPhantom1]);
         const d2 = getDistance([xPacman, yPacman], [xPhantom2, yPhantom2]);
         const d3 = getDistance([xPacman, yPacman], [xPhantom3, yPhantom3]);
         const d4 = getDistance([xPacman, yPacman], [xPhantom4, yPhantom4]);
+        const d5 = getDistance([xPacman, yPacman], [xGuinda1, yGuinda1]);
+        const d6 = getDistance([xPacman, yPacman], [xGuinda2, yGuinda2]);
 
-        if([d1, d2, d3, d4].some(x => x < 14)) {
-          pacman.style.display = 'none';
-          gameover.style.display = 'block';
+        if ([d1, d2, d3, d4].some((x) => x < 14)) {
+          pacman.setProperty("display", "none");
+          gameover.setProperty("display", "block");
+          clearInterval(movementInterval);
         }
-      }
+
+        if ([d5, d6].some((x) => x < 13)) {
+          phantom1.setProperty("display", "none");
+          phantom2.setProperty("display", "none");
+          phantom3.setProperty("display", "none");
+          phantom4.setProperty("display", "none");
+          gameover.setProperty("display", "block");
+          clearInterval(movementInterval);
+        }
+      };
+
+      const playerMovements = (type) => (x, y) => (direction) =>
+        direction
+          ? {
+              phantom: {
+                up: [{ prop: "top", val: (y > 20 ? y - 10 : 10) + "px" }],
+                down: [{ prop: "top", val: (y < 500 ? y + 10 : 490) + "px" }],
+                left: [
+                  { prop: "left", val: (x > 20 ? x - 10 : 10) + "px" },
+                  { prop: "transform", val: "scaleX(-1)" },
+                ],
+                right: [
+                  { prop: "left", val: (x < 500 ? x + 10 : 490) + "px" },
+                  { prop: "transform", val: "rotate(0deg)" },
+                ],
+              }[direction],
+              pacman: {
+                up: [
+                  { prop: "top", val: (y > 20 ? y - 10 : 10) + "px" },
+                  { prop: "transform", val: "rotate(270deg)" },
+                ],
+                down: [
+                  { prop: "top", val: (y < 500 ? y + 10 : 490) + "px" },
+                  { prop: "transform", val: "rotate(90deg)" },
+                ],
+                left: [
+                  { prop: "left", val: (x > 20 ? x - 10 : 10) + "px" },
+                  { prop: "transform", val: "scaleX(-1)" },
+                ],
+                right: [
+                  { prop: "left", val: (x < 500 ? x + 10 : 490) + "px" },
+                  { prop: "transform", val: "rotate(0deg)" },
+                ],
+              }[direction],
+            }[type]
+          : [];
 
       // Event Observer
-      const keyDown = fromEvent(document, 'keydown')
-        .pipe(map(event => event.key));
-      
-      const movePlayer = (player, direction) => {
+      const pacmanObserver = fromEvent(document, "keydown").pipe(
+        map((event) => event.key)
+      );
+
+      const phantomObserver = fromEvent(document, "keydown").pipe(
+        map((event) => event.key)
+      );
+
+      const movePlayer = (movements) => (direction) => (player) => {
         const pV = parseInt(player.style.top || 0);
         const pH = parseInt(player.style.left || 0);
-        
-        switch (direction) {
-          case 1:
-            player.style.top = ((pV - 10) > 10 ? (pV - 10) : 10) + 'px';
-            break;
-          case 2:
-            player.style.top = ((pV + 10) < 490 ? (pV + 10) : 490) + 'px';
-            break;
-          case 3:
-            player.style.left = ((pH - 10) > 10 ? (pH - 10) : 10 )+ 'px';
-            player.style.transform = 'rotate(0deg)';
-            break;
-          case 4:
-            player.style.left = ((pH + 10) < 490 ? (pH + 10) : 490) + 'px';
-            player.style.transform = 'scaleX(-1)';
-            break;
-          default:
-            break;
-        }
-      }
 
-      const randomMovement = () => {
+        movements(pH, pV)(direction).reduce(setCssProp, player.style);
+      };
+
+      const seekPacman = () => {
         const {
-          xPacman, 
-          yPacman, 
+          xPacman,
+          yPacman,
           xPhantom1,
           yPhantom1,
           xPhantom2,
@@ -127,54 +180,40 @@
           yPhantom3,
           xPhantom4,
           yPhantom4,
-        } = getPositions(); 
-        const direction2 = makeMove([xPacman, yPacman],[xPhantom2, yPhantom2]);
-        const direction3 = makeMove([xPacman, yPacman],[xPhantom3, yPhantom3]);
-        const direction4 = makeMove([xPacman, yPacman],[xPhantom4, yPhantom4]);
-        
-        movePlayer(phantom2, direction2);
-        movePlayer(phantom3, direction3);
-        movePlayer(phantom4, direction4);
-      }
+        } = getPositions();
 
-      // Subscriber
-      keyDown.subscribe(val => {
-        const pacmanposV = parseInt(pacman.style.top || 0);
-        const pacmanposH = parseInt(pacman.style.left || 0);
-        const phantomposV = parseInt(phantom1.style.top || 490);
-        const phantomposH = parseInt(phantom1.style.left || 490);
-        switch (val) {
-          case 'ArrowUp':
-            movePlayer(pacman, 1);
-            pacman.style.transform = 'rotate(270deg)';
-            break;
-          case 'ArrowDown':
-            movePlayer(pacman, 2);
-            pacman.style.transform = 'rotate(90deg)';
-            break;
-          case 'ArrowLeft':
-            movePlayer(pacman, 3);
-            pacman.style.transform = 'rotate(180deg)';
-            break;
-          case 'ArrowRight':
-            movePlayer(pacman, 4);
-            pacman.style.transform = 'rotate(0deg)';
-            break;
-          case 'w':
-            movePlayer(phantom1, 1);
-            break;
-          case 's':
-            movePlayer(phantom1, 2);
-            break;
-          case 'a':
-            movePlayer(phantom1, 3);
-            break;
-          case 'd':
-            movePlayer(phantom1, 4);
-            break;
-          default:
-            break;
-        }
+        const direction2 = makeMove([xPacman, yPacman], [xPhantom2, yPhantom2]);
+        const direction3 = makeMove([xPacman, yPacman], [xPhantom3, yPhantom3]);
+        const direction4 = makeMove([xPacman, yPacman], [xPhantom4, yPhantom4]);
+
+        const moveNPC = movePlayer(playerMovements("phantom"));
+        moveNPC(direction2)(phantom2);
+        moveNPC(direction3)(phantom3);
+        moveNPC(direction4)(phantom4);
+      };
+
+      // Subscribers
+      pacmanObserver.subscribe((key) => {
+        const controls = {
+          ArrowUp: "up",
+          ArrowDown: "down",
+          ArrowLeft: "left",
+          ArrowRight: "right",
+        };
+
+        movePlayer(playerMovements("pacman"))(controls[key])(pacman);
+        checkCollisions();
+      });
+
+      phantomObserver.subscribe((key) => {
+        const controls = {
+          w: "up",
+          s: "down",
+          a: "left",
+          d: "right",
+        };
+
+        movePlayer(playerMovements("phantom"))(controls[key])(phantom1);
         checkCollisions();
       });
     </script>
